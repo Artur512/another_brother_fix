@@ -1472,6 +1472,7 @@ class PrinterInfo {
   bool isCutAtEnd;
   bool isSpecialTape;
   bool isHalfCut;
+  bool chainPrint;
   bool mode9;
   PrintQuality printQuality;
   bool mirrorPrint;
@@ -1515,6 +1516,7 @@ class PrinterInfo {
       this.paperPosition = Align.CENTER,
       this.isAutoCut = true,
       this.isCutAtEnd = true,
+      this.chainPrint = false,
       this.mode9 = true,
       this.skipStatusCheck = false,
       this.checkPrintEnd = CheckPrintEnd.CPE_CHECK,
@@ -1601,6 +1603,7 @@ class PrinterInfo {
         paperPosition: Align.fromMap(map["paperPosition"]),
         isAutoCut: map["isAutoCut"],
         isCutAtEnd: map["isCutAtEnd"],
+        chainPrint: map["chainPrint"],
         mode9: map["mode9"],
         skipStatusCheck: map["skipStatusCheck"],
         checkPrintEnd: CheckPrintEnd.fromMap(map["checkPrintEnd"]),
@@ -1664,6 +1667,7 @@ class PrinterInfo {
       "paperPosition": paperPosition.toMap(),
       "isAutoCut": isAutoCut,
       "isCutAtEnd": isCutAtEnd,
+      "chainPrint": chainPrint,
       "mode9": mode9,
       "skipStatusCheck": skipStatusCheck,
       "checkPrintEnd": checkPrintEnd.toMap(),
@@ -2090,6 +2094,7 @@ class LabelParam {
   bool isHalfCut = false;
   bool isSpecialTape = false;
   bool isCutMark = false;
+  bool chainPrint = false;
   int tubeHeadPinNum = 0;
   String paperName;
   String paperNameInch;
@@ -2178,6 +2183,7 @@ class LabelParam {
         "isHalfCut  $isHalfCut, "
         "isSpecialTape $isSpecialTape,"
         "isCutMark $isCutMark,"
+        "chainPrint $chainPrint,"
         "tubeHeadPinNum $tubeHeadPinNum, "
         "paperName $paperName, "
         "paperNameInch $paperNameInch, "
