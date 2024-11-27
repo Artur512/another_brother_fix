@@ -8,6 +8,10 @@
 #import <Foundation/Foundation.h>
 #import "GetNetPrintersMethodCall.h"
 
+@interface GetNetPrintersMethodCall() <BRPtouchNetworkDelegate>
+@property (nonatomic, strong) BRPtouchNetworkManager *networkManager;
+@end
+
 @implementation GetNetPrintersMethodCall
 
 static NSString * METHOD_NAME = @"getNetPrinters";
@@ -35,17 +39,17 @@ static NSString * METHOD_NAME = @"getNetPrinters";
         return;
     }
     
-    _netManager = [[BRPtouchNetworkManager alloc] initWithPrinterNames:printerModels];
-    if (!_netManager) {
+    _networkManager = [[BRPtouchNetworkManager alloc] initWithPrinterNames:printerModels];
+    if (!_networkManager) {
         _result([FlutterError errorWithCode:@"INITIALIZATION_ERROR"
                                   message:@"Failed to initialize network manager"
                                   details:nil]);
         return;
     }
     
-    [_netManager setDelegate:self];
-    [_netManager setIsEnableIPv6Search:false];
-    [_netManager startSearch:2];
+    _networkManager.delegate = self;
+    [_networkManager setIsEnableIPv6Search:false];
+    [_networkManager startSearch:2];
 }
 
 - (void)didFindDevice:(BRPtouchDeviceInfo *)deviceInfo {
@@ -56,7 +60,7 @@ static NSString * METHOD_NAME = @"getNetPrinters";
 
 - (void)didFinishSearch:(id)sender {
     // Get found printer list. Array of BRPtouchDeviceInfo
-    NSArray<BRPtouchPrintInfo *> * scanResults = [_netManager getPrinterNetInfo];
+    NSArray<BRPtouchDeviceInfo *> * scanResults = [_networkManager getPrinterNetInfo];
     
     // Map the paths into Dart Net Printers
     NSMutableArray<NSDictionary<NSString *, NSObject*> *> * dartNetPrinters = [NSMutableArray arrayWithCapacity:[scanResults count]];
@@ -65,7 +69,17 @@ static NSString * METHOD_NAME = @"getNetPrinters";
         [dartNetPrinters addObject:mapObj];
     }];
     
-    _result(dartNetPrinters);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        _result(dartNetPrinters);
+    });
+    
+    _networkManager.delegate = nil;
+    _networkManager = nil;
+}
+
+- (void)dealloc {
+    _networkManager.delegate = nil;
+    _networkManager = nil;
 }
 
 @end
