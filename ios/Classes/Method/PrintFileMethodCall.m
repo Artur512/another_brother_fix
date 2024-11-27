@@ -31,7 +31,7 @@ static NSString * METHOD_NAME = @"printFile";
         @try {
             // Validate input parameters
             if (!_call.arguments[@"printInfo"] || !_call.arguments[@"filePath"]) {
-                [self handleError:BRLMPrintErrorCodePrinterStatusErrorInvalidParameter];
+                [self handleError:BRLMPrintErrorCodeFilepathURLError];
                 return;
             }
 
@@ -40,7 +40,7 @@ static NSString * METHOD_NAME = @"printFile";
             
             // Validate file exists
             if (![[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
-                [self handleError:BRLMPrintErrorCodePrinterStatusErrorFileNotFound];
+                [self handleError:BRLMPrintErrorCodeFilepathURLError];
                 return;
             }
 
@@ -80,7 +80,7 @@ static NSString * METHOD_NAME = @"printFile";
             }
         }
         @catch (NSException *exception) {
-            [self handleError:BRLMPrintErrorCodePrinterStatusErrorUnknown];
+            [self handleError:BRLMPrintErrorCodeUnknownError];
         }
     });
 }
