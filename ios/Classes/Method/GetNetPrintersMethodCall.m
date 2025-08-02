@@ -8,7 +8,9 @@
 #import <Foundation/Foundation.h>
 #import "GetNetPrintersMethodCall.h"
 
-@implementation GetNetPrintersMethodCall
+@implementation GetNetPrintersMethodCall {
+    BOOL _isSearching;
+}
 
 static NSString * METHOD_NAME = @"getNetPrinters";
 
@@ -19,6 +21,7 @@ static NSString * METHOD_NAME = @"getNetPrinters";
         _call = call;
         _result = result;
         _foundPrinters = [[NSMutableArray<BRPtouchDeviceInfo *> alloc] init];
+        _isSearching = NO;
     }
     return self;
 }
@@ -26,26 +29,43 @@ static NSString * METHOD_NAME = @"getNetPrinters";
 + (NSString *) METHOD_NAME {
     return METHOD_NAME;
 }
+
 - (void)execute {
-    NSArray * printerModels = _call.arguments[@"models"];
-    if (!printerModels) {
-        _result([FlutterError errorWithCode:@"INVALID_ARGUMENT"
-                                  message:@"Printer models array is required"
-                                  details:nil]);
+    if (_isSearching) {
+        _result([FlutterError errorWithCode:@"ALREADY_SEARCHING"
+                                    message:@"A printer search is already in progress"
+                                    details:nil]);
         return;
     }
-    
+
+    NSArray * printerModels = _call.arguments[@"models"];
+    if (!printerModels || ![printerModels isKindOfClass:[NSArray class]]) {
+        _result([FlutterError errorWithCode:@"INVALID_ARGUMENT"
+                                    message:@"Printer models array is required"
+                                    details:nil]);
+        return;
+    }
+
     _netManager = [[BRPtouchNetworkManager alloc] initWithPrinterNames:printerModels];
     if (!_netManager) {
         _result([FlutterError errorWithCode:@"INITIALIZATION_ERROR"
-                                  message:@"Failed to initialize network manager"
-                                  details:nil]);
+                                    message:@"Failed to initialize network manager"
+                                    details:nil]);
         return;
     }
-    
+
+    _isSearching = YES;
+
     [_netManager setDelegate:self];
-    [_netManager setIsEnableIPv6Search:false];
-    [_netManager startSearch:2];
+    [_netManager setIsEnableIPv6Search:NO];
+
+    BOOL started = [_netManager startSearch:2];
+    if (!started) {
+        _isSearching = NO;
+        _result([FlutterError errorWithCode:@"SEARCH_FAILED"
+                                    message:@"Failed to start printer search"
+                                    details:nil]);
+    }
 }
 
 - (void)didFindDevice:(BRPtouchDeviceInfo *)deviceInfo {
@@ -55,17 +75,18 @@ static NSString * METHOD_NAME = @"getNetPrinters";
 }
 
 - (void)didFinishSearch:(id)sender {
-    // Get found printer list. Array of BRPtouchDeviceInfo
+    _isSearching = NO;
+
     NSArray<BRPtouchPrintInfo *> * scanResults = [_netManager getPrinterNetInfo];
-    
-    // Map the paths into Dart Net Printers
+
     NSMutableArray<NSDictionary<NSString *, NSObject*> *> * dartNetPrinters = [NSMutableArray arrayWithCapacity:[scanResults count]];
     [scanResults enumerateObjectsUsingBlock:^(id printerInfo, NSUInteger idx, BOOL *stop) {
         id mapObj = [BrotherUtils bRPtouchDeviceInfoToNetPrinterMap:printerInfo];
-        [dartNetPrinters addObject:mapObj];
+        if (mapObj) {
+            [dartNetPrinters addObject:mapObj];
+        }
     }];
-    
+
     _result(dartNetPrinters);
 }
-
 @end
